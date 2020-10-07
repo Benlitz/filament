@@ -1,0 +1,41 @@
+name: SwiftShader
+
+on:
+  push:
+    branches:
+      - 'rc/**'
+      - 'pr/docker_action' # TODO: remove this line
+      - '**/trigger/swiftshader'
+  schedule:
+    - cron: '1 0 * * *' # Run at midnight every day.
+
+jobs:
+  swiftshader:
+    name: Test Filament + Vulkan + SwiftShader
+    runs-on: ubuntu-latest
+    steps:
+
+    - uses: actions/checkout@v2.0.0
+
+    - name: Download Image with Pre-Built SwiftShader
+      run: build/swiftshader/test.sh fetch
+
+    - name: Launch Container
+      run: build/swiftshader/test.sh start
+
+    - name: Build Filament
+      run: build/swiftshader/test.sh build filament release
+
+    - name: Test Filament with SwiftShader
+      continue-on-error: true
+      timeout-minutes: 15
+      run: build/swiftshader/test.sh run
+
+    - name: Dump Memory Logs
+      run: build/swiftshader/test.sh logs
+
+    - uses: actions/upload-artifact@v2
+      with:
+        name: results
+        path: results
+        if-no-files-found: error
